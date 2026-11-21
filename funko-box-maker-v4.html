@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funko Box Maker</title>
+<style>
+  :root{
+    --bg:#f3efe6; --card:#ffffff; --ink:#1f1d1a; --muted:#6e6a62; --line:#dcd5c6;
+    --accent:#6d3fd1; --warn:#b3261e; --fold:#d6336c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);background:var(--card)}
+  header h1{margin:0;font-size:20px}
+  header p{margin:4px 0 0;color:var(--muted)}
+  main{display:grid;grid-template-columns:minmax(300px,390px) 1fr;gap:20px;padding:20px 24px;max-width:1400px;margin:0 auto}
+  @media (max-width:880px){main{grid-template-columns:1fr;padding:16px}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card + .card{margin-top:16px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px}
+  label{display:block;font-weight:600;margin-bottom:4px}
+  select,input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .field{margin-bottom:12px}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  .err{color:var(--warn);font-size:13px;margin-top:8px;min-height:1.2em}
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:520px){.slots{grid-template-columns:1fr}}
+  .slot{border:1px dashed #cbc3b0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:#fcfbf8}
+  .slot.over{border-color:var(--accent);background:#f3edff}
+  .slot-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600}
+  .slot-head .dl{font-weight:400;color:var(--muted);font-size:11px;white-space:nowrap}
+  .thumb{aspect-ratio:4/3;border-radius:6px;background:#ece8de;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12px}
+  .thumb img{width:100%;height:100%;object-fit:contain}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button:hover:not(:disabled){border-color:#aaa}
+  button:disabled{opacity:.45;cursor:default}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;width:100%;padding:12px;font-size:15px}
+  button.primary:hover{filter:brightness(1.08)}
+  .slot select{padding:6px 8px;font-size:13px;flex:1 1 100%;width:100%}
+  .preview-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline;margin-bottom:10px}
+  .preview-top h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0}
+  #net{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+  #net svg{display:block;width:100%;height:auto}
+  .legend{display:flex;gap:16px;color:var(--muted);font-size:12px;flex-wrap:wrap;margin-top:10px}
+  .sw{display:inline-block;width:24px;border-top:2px solid #111;vertical-align:middle;margin-right:6px}
+  .sw.f{border-top:2px dashed var(--fold)}
+  ol.steps{margin:14px 0 0 18px;padding:0;color:var(--muted)}
+  ol.steps li{margin-bottom:4px}
+  #print-area{display:none}
+  @media print{
+    body > *:not(#print-area){display:none !important}
+    #print-area{display:block !important}
+    #print-area .pg{overflow:hidden;break-after:page;page-break-after:always}
+    #print-area .pg:last-child{break-after:auto;page-break-after:auto}
+    #print-area svg{display:block;width:100%;height:100%}
+    html,body{background:#fff}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Funko Box Maker <span style="font-size:12px;color:#6d3fd1;font-weight:600">v2 · bottom panel + tuck flaps</span></h1>
+  <p>Enter the box size, add the five pictures, then print the net at actual size.</p>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>1. Units &amp; paper</h2>
+      <div class="field">
+        <label for="unit">Measurement system</label>
+        <select id="unit">
+          <option value="us">US: inches</option>
+          <option value="uk">UK: centimetres</option>
+          <option value="metric">Metric: millimetres</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="paper">Paper</label>
+          <select id="paper">
+            <option value="letter">Letter (8.5 × 11 in)</option>
+            <option value="a4">A4 (210 × 297 mm)</option>
+            <option value="a3">A3 (297 × 420 mm)</option>
+            <option value="tabloid">Tabloid (11 × 17 in)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="orient">Orientation</label>
+          <select id="orient">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint">Changing the measurement system also switches to the matching default paper. You can change it again below.</div>
+    </div>
+
+    <div class="card">
+      <h2>2. Box size (outside measurements)</h2>
+      <div class="row3">
+        <div class="field">
+          <label for="dim-h" id="lbl-h">Height</label>
+          <input id="dim-h" type="number" min="0" step="any" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="dim-d" id="lbl-d">Depth</label>
+          <input id="dim-d" type="number" min="0" step="any" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="dim-w" id="lbl-w">Width</label>
+          <input id="dim-w" type="number" min="0" step="any" inputmode="decimal">
+        </div>
+      </div>
+      <div class="hint">Width = front to back edge, Depth = side to side, Height = bottom to top. Use the outside size of the finished box.</div>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Pictures</h2>
+      <div class="slots" id="slots"></div>
+      <div class="hint">Each picture is auto-fitted to its panel. <b>Fit panel (whole picture)</b> shows the entire image inside the panel (default). <b>Fill panel (crop edges)</b> covers the whole panel and crops the overflow. <b>Stretch to panel</b> fills the panel edge to edge with no crop, but changes the picture's proportions. Use Rotate if a picture is sideways.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <div class="preview-top">
+        <h2>Print layout (cut &amp; fold guide)</h2>
+        <span id="info" class="hint"></span>
+      </div>
+      <div id="net"></div>
+      <div class="legend">
+        <span><span class="sw"></span>Cut</span>
+        <span><span class="sw f"></span>Fold</span>
+      </div>
+      <div style="margin-top:14px">
+        <button class="primary" id="pdf" type="button">Save as PDF (actual size)</button>
+        <button type="button" id="print" style="width:100%;margin-top:8px">Print instead</button>
+        <div class="hint" id="pdfmsg"></div>
+      </div>
+      <ol class="steps">
+        <li>In the print dialog set <b>Scale</b> to <b>100%</b> (or "Actual size") and turn off <b>Fit to page</b>.</li>
+        <li>On page 1 check the scale bar at the bottom measures exactly the length printed next to it.</li>
+        <li>Cut along the solid lines. Fold along the dashed lines.</li>
+        <li>Each page overlaps the next by 12 mm. Line up the panel edges in the overlap strip, then tape from the inside.</li>
+        <li>Glue the tab on the back panel to the inside of the left side panel to close the box.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<div id="print-area"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Constants ----------
+  const UNITS = {
+    us:     {unit:"in", toMm:25.4, step:"0.125", dec:3, paper:"letter", bar:50.8, barLabel:"2 in"},
+    uk:     {unit:"cm", toMm:10,   step:"0.1",   dec:1, paper:"a4",     bar:50,   barLabel:"5 cm"},
+    metric: {unit:"mm", toMm:1,    step:"1",     dec:0, paper:"a4",     bar:50,   barLabel:"50 mm"}
+  };
+  const PAPERS = {
+    letter:  {name:"Letter",  w:215.9, h:279.4},
+    a4:      {name:"A4",      w:210,   h:297},
+    a3:      {name:"A3",      w:297,   h:420},
+    tabloid: {name:"Tabloid", w:279.4, h:431.8}
+  };
+  const PANELS = {front:"Front", back:"Back", left:"Left side", right:"Right side", top:"Top", bottom:"Bottom"};
+  const TUCK = 15;       // mm, tuck flap on top and bottom panels
+  const DIM_NAMES = {h:"Height", d:"Depth", w:"Width"};
+  const MARGIN = 10;     // mm, non-printable margin kept on every page
+  const OVERLAP = 12;    // mm, strip shared between neighbouring pages
+  const GLUE = 15;       // mm, glue tab width
+  const MAX_MM = 2000;
+
+  // ---------- State (dimensions always stored in mm) ----------
+  const state = {
+    unit: "us",
+    paper: "letter",
+    orient: "portrait",
+    dims: {h: 165.1, d: 101.6, w: 114.3},   // 6.5 x 4 x 4.5 in placeholder
+    imgs: {}                                 // key -> {src, fit:'cover'|'contain', rot:0|90|180|270}
+  };
+
+  const $ = id => document.getElementById(id);
+  const U = () => UNITS[state.unit];
+  const fmtNum = mm => {
+    const s = (mm / U().toMm).toFixed(U().dec);
+    return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
+  };
+
+  // ---------- Geometry (net coordinates, mm) ----------
+  // Vertical layout (top to bottom):
+  //   top tuck flap (T) | top (d) | front (h) | bottom (d) | bottom tuck flap (T)
+  // Horizontal layout (left to right):
+  //   left (d) | front (w) | right (d) | back (w) | glue tab (G)
+  function geom(){
+    const {h, d, w} = state.dims;
+    const T = TUCK, Y = T;                 // top panel starts below the top tuck flap
+    const Yf = Y + d;                      // front / side panels start
+    const Yb = Yf + h;                     // bottom panel starts
+    const Ye = Yb + d;                     // bottom panel ends, bottom tuck flap starts
+    const X = 2*d + 2*w;                   // x where glue tab attaches
+    return {
+      h, d, w, T, Y, Yf, Yb, Ye, X,
+      c: Math.min(10, w*0.12),             // tuck flap tip inset
+      C: Math.min(GLUE, h*0.2),            // glue tab chamfer
+      netW: X + GLUE,
+      netH: Ye + T
+    };
+  }
+  function rects(g){
+    const {h, d, w, Y, Yf, Yb} = g;
+    return {
+      top:    {x: d,       y: Y,  w: w, h: d},
+      left:   {x: 0,       y: Yf, w: d, h: h},
+      front:  {x: d,       y: Yf, w: w, h: h},
+      right:  {x: d + w,   y: Yf, w: d, h: h},
+      back:   {x: 2*d + w, y: Yf, w: w, h: h},
+      bottom: {x: d,       y: Yb, w: w, h: d}
+    };
+  }
+  function dimsFor(key){
+    const {w, d, h} = state.dims;
+    return {front:[w,h], back:[w,h], left:[d,h], right:[d,h], top:[w,d], bottom:[w,d]}[key];
+  }
+  function dimLabel(key){
+    const [a, b] = dimsFor(key);
+    return `${fmtNum(a)} × ${fmtNum(b)} ${U().unit}`;
+  }
+
+  // ---------- SVG building ----------
+  function panelSVG(key, r, pid){
+    const img = state.imgs[key];
+    const cx = r.x + r.w/2, cy = r.y + r.h/2;
+    let s = `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#ffffff"/>`;
+    if (img){
+      const swap = img.rot % 180 !== 0;
+      const bw = swap ? r.h : r.w, bh = swap ? r.w : r.h;   // box rotated about centre
+      const par = img.fit === "contain" ? "xMidYMid meet"
+                : img.fit === "stretch" ? "none"
+                : "xMidYMid slice";
+      const tr = img.rot ? ` transform="rotate(${img.rot} ${cx} ${cy})"` : "";
+      s += `<image href="${img.src}" x="${cx - bw/2}" y="${cy - bh/2}" width="${bw}" height="${bh}" preserveAspectRatio="${par}"${tr}/>`;
+    } else {
+      const fs = Math.min(r.w, r.h) * 0.08;
+      s += `<text x="${cx}" y="${cy - fs*0.4}" text-anchor="middle" font-size="${fs}" fill="#9a958a" font-family="Arial,sans-serif">${PANELS[key]}</text>`;
+      s += `<text x="${cx}" y="${cy + fs*1.0}" text-anchor="middle" font-size="${fs*0.6}" fill="#b5afa2" font-family="Arial,sans-serif">${dimLabel(key)}</text>`;
+    }
+    return `<g clip-path="url(#${pid}-${key})">${s}</g>`;
+  }
+
+  // Full net in mm coordinates. pid keeps clip-path ids unique per page.
+  function netSVG(pid){
+    const g = geom(), R = rects(g);
+    const {d, w, h, T, Y, Yf, Yb, Ye, X, c, C} = g;
+    let defs = "", body = "";
+    for (const k of Object.keys(R)){
+      const r = R[k];
+      defs += `<clipPath id="${pid}-${k}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`;
+      body += panelSVG(k, r, pid);
+    }
+    // tuck flaps (top and bottom), tapered tips
+    body += `<polygon points="${d},${Y} ${d+c},0 ${d+w-c},0 ${d+w},${Y}" fill="#ffffff"/>`;
+    body += `<polygon points="${d},${Ye} ${d+c},${Ye+T} ${d+w-c},${Ye+T} ${d+w},${Ye}" fill="#ffffff"/>`;
+    body += `<text x="${d+w/2}" y="${T/2}" text-anchor="middle" dominant-baseline="middle" font-size="${T*0.4}" fill="#b5afa2" font-family="Arial,sans-serif">TUCK</text>`;
+    body += `<text x="${d+w/2}" y="${Ye+T/2}" text-anchor="middle" dominant-baseline="middle" font-size="${T*0.4}" fill="#b5afa2" font-family="Arial,sans-serif">TUCK</text>`;
+    // glue tab (tapered)
+    body += `<polygon points="${X},${Yf} ${X+GLUE},${Yf+C} ${X+GLUE},${Yf+h-C} ${X},${Yf+h}" fill="#ffffff"/>`;
+    body += `<text transform="translate(${X + GLUE/2},${Yf + h/2}) rotate(-90)" text-anchor="middle" dominant-baseline="middle" font-size="${GLUE*0.4}" fill="#b5afa2" font-family="Arial,sans-serif">GLUE</text>`;
+
+    const seg = (a, b) => `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`;
+    const cuts = [
+      // top tuck flap outline
+      [[d,Y],[d+c,0]], [[d+c,0],[d+w-c,0]], [[d+w-c,0],[d+w,Y]],
+      // top panel sides
+      [[d,Y],[d,Yf]], [[d+w,Y],[d+w,Yf]],
+      // left side
+      [[0,Yf],[0,Yf+h]], [[0,Yf],[d,Yf]], [[0,Yf+h],[d,Yf+h]],
+      // bottom panel sides
+      [[d,Yb],[d,Ye]], [[d+w,Yb],[d+w,Ye]],
+      // bottom tuck flap outline
+      [[d,Ye],[d+c,Ye+T]], [[d+c,Ye+T],[d+w-c,Ye+T]], [[d+w-c,Ye+T],[d+w,Ye]],
+      // right side
+      [[d+w,Yf],[2*d+w,Yf]], [[d+w,Yf+h],[2*d+w,Yf+h]],
+      // back
+      [[2*d+w,Yf],[X,Yf]], [[2*d+w,Yf+h],[X,Yf+h]],
+      // glue tab
+      [[X,Yf],[X+GLUE,Yf+C]], [[X+GLUE,Yf+C],[X+GLUE,Yf+h-C]], [[X+GLUE,Yf+h-C],[X,Yf+h]]
+    ];
+    const folds = [
+      [[d,Y],[d+w,Y]],                 // top tuck / top
+      [[d,Yf],[d+w,Yf]],               // top / front
+      [[d,Yf],[d,Yf+h]],               // front / left
+      [[d+w,Yf],[d+w,Yf+h]],           // front / right
+      [[2*d+w,Yf],[2*d+w,Yf+h]],       // right / back
+      [[X,Yf],[X,Yf+h]],               // back / glue tab
+      [[d,Yb],[d+w,Yb]],               // front / bottom
+      [[d,Ye],[d+w,Ye]]                // bottom / bottom tuck flap
+    ];
+    body += `<path d="${cuts.map(c => seg(c[0], c[1])).join("")}" fill="none" stroke="#111" stroke-width="0.4" stroke-linecap="round"/>`;
+    body += `<path d="${folds.map(c => seg(c[0], c[1])).join("")}" fill="none" stroke="#d6336c" stroke-width="0.35" stroke-dasharray="3 2"/>`;
+    return `<defs>${defs}</defs>${body}`;
+  }
+
+  // ---------- Layout / tiling ----------
+  function paperSize(){
+    const p = PAPERS[state.paper];
+    return state.orient === "portrait" ? {w: p.w, h: p.h} : {w: p.h, h: p.w};
+  }
+  function plan(){
+    const g = geom(), ps = paperSize();
+    const pw = ps.w - 2*MARGIN, ph = ps.h - 2*MARGIN;
+    const sx = pw - OVERLAP, sy = ph - OVERLAP;
+    const cols = g.netW <= pw ? 1 : Math.ceil((g.netW - pw) / sx) + 1;
+    const rows = g.netH <= ph ? 1 : Math.ceil((g.netH - ph) / sy) + 1;
+    return {g, ps, pw, ph, sx, sy, cols, rows};
+  }
+
+  function pageSVG(P, r, c, n, total){
+    const pid = `pg${n}`;
+    const x0 = c * P.sx, y0 = r * P.sy;
+    // single-sheet layouts are centred on the page
+    const ox = P.cols === 1 ? (P.pw - P.g.netW) / 2 : 0;
+    const oy = P.rows === 1 ? (P.ph - P.g.netH) / 2 : 0;
+    const tx = MARGIN + ox - x0, ty = MARGIN + oy - y0;
+    const bar = U().bar, y = P.ps.h - 4;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${P.ps.w}mm" height="${P.ps.h}mm" viewBox="0 0 ${P.ps.w} ${P.ps.h}">
+<defs><clipPath id="${pid}-area"><rect x="${MARGIN}" y="${MARGIN}" width="${P.pw}" height="${P.ph}"/></clipPath></defs>
+<rect width="${P.ps.w}" height="${P.ps.h}" fill="#ffffff"/>
+<g clip-path="url(#${pid}-area)"><g transform="translate(${tx} ${ty})">${netSVG(pid)}</g></g>
+<text x="${MARGIN}" y="${MARGIN - 3}" font-size="3" font-family="Arial,sans-serif" fill="#555">Funko box · page ${n} of ${total} (row ${r+1}, column ${c+1}) · overlap ${OVERLAP} mm</text>
+<g stroke="#000" stroke-width="0.3"><line x1="${MARGIN}" y1="${y}" x2="${MARGIN + bar}" y2="${y}"/><line x1="${MARGIN}" y1="${y-1.5}" x2="${MARGIN}" y2="${y+1.5}"/><line x1="${MARGIN + bar}" y1="${y-1.5}" x2="${MARGIN + bar}" y2="${y+1.5}"/></g>
+<text x="${MARGIN + bar + 2}" y="${y + 1}" font-size="3" font-family="Arial,sans-serif" fill="#000">Scale check: ${U().barLabel}</text>
+</svg>`;
+  }
+
+  // ---------- Pictures ----------
+  const SLOT_KEYS = ["front", "back", "left", "right", "top", "bottom"];
+
+  function buildSlots(){
+    const wrap = $("slots");
+    for (const key of SLOT_KEYS){
+      const el = document.createElement("div");
+      el.className = "slot";
+      el.dataset.key = key;
+      el.innerHTML = `
+        <div class="slot-head"><span>${PANELS[key]}</span><span class="dl"></span></div>
+        <div class="thumb"></div>
+        <div class="btns">
+          <button type="button" data-act="pick">Choose picture</button>
+          <input type="file" accept="image/*" hidden>
+        </div>
+        <div class="btns">
+          <select data-act="fit" aria-label="${PANELS[key]} fit">
+            <option value="contain">Fit panel (whole picture)</option>
+            <option value="cover">Fill panel (crop edges)</option>
+            <option value="stretch">Stretch to panel (no crop, distorts)</option>
+          </select>
+          <button type="button" data-act="rot">Rotate 0°</button>
+          <button type="button" data-act="remove">Remove</button>
+        </div>`;
+      wrap.appendChild(el);
+    }
+
+    wrap.addEventListener("click", e => {
+      const slot = e.target.closest(".slot"); if (!slot) return;
+      const key = slot.dataset.key, act = e.target.dataset.act;
+      if (act === "pick") slot.querySelector('input[type=file]').click();
+      else if (act === "rot" && state.imgs[key]){ state.imgs[key].rot = (state.imgs[key].rot + 90) % 360; renderAll(); }
+      else if (act === "remove" && state.imgs[key]){
+        delete state.imgs[key];
+        slot.querySelector('input[type=file]').value = "";
+        renderAll();
+      }
+    });
+    wrap.addEventListener("change", e => {
+      const slot = e.target.closest(".slot"); if (!slot) return;
+      const key = slot.dataset.key;
+      if (e.target.type === "file" && e.target.files[0]) loadFile(key, e.target.files[0]);
+      if (e.target.dataset.act === "fit" && state.imgs[key]){ state.imgs[key].fit = e.target.value; renderAll(); }
+    });
+    wrap.addEventListener("dragover", e => {
+      const slot = e.target.closest(".slot"); if (!slot) return;
+      e.preventDefault(); slot.classList.add("over");
+    });
+    wrap.addEventListener("dragleave", e => {
+      const slot = e.target.closest(".slot"); if (slot) slot.classList.remove("over");
+    });
+    wrap.addEventListener("drop", e => {
+      const slot = e.target.closest(".slot"); if (!slot) return;
+      e.preventDefault(); slot.classList.remove("over");
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith("image/")) loadFile(slot.dataset.key, f);
+    });
+  }
+
+  function loadFile(key, file){
+    const fr = new FileReader();
+    fr.onload = () => {
+      const prev = state.imgs[key];
+      state.imgs[key] = {src: fr.result, fit: prev ? prev.fit : "contain", rot: prev ? prev.rot : 0};
+      renderAll();
+    };
+    fr.readAsDataURL(file);
+  }
+
+  function renderSlots(){
+    document.querySelectorAll(".slot").forEach(el => {
+      const key = el.dataset.key, img = state.imgs[key];
+      el.querySelector(".dl").textContent = dimLabel(key);
+      const src = img ? img.src : "";
+      if (el.dataset.src !== src){
+        el.dataset.src = src;
+        el.querySelector(".thumb").innerHTML = img
+          ? `<img alt="${PANELS[key]} picture" src="${src}">`
+          : "No picture yet";
+      }
+      const fit = el.querySelector('select[data-act=fit]');
+      fit.value = img ? img.fit : "contain";
+      fit.disabled = !img;
+      el.querySelector('[data-act=rot]').disabled = !img;
+      el.querySelector('[data-act=rot]').textContent = `Rotate ${img ? img.rot : 0}°`;
+      el.querySelector('[data-act=remove]').disabled = !img;
+    });
+  }
+
+  // ---------- Inputs ----------
+  function syncDimInputs(){
+    for (const k of ["h", "d", "w"]){
+      const inp = $("dim-" + k);
+      inp.step = U().step;
+      inp.value = fmtNum(state.dims[k]);
+      $("lbl-" + k).textContent = `${DIM_NAMES[k]} (${U().unit})`;
+    }
+  }
+
+  function bindDimInputs(){
+    for (const k of ["h", "d", "w"]){
+      $("dim-" + k).addEventListener("input", e => {
+        const v = parseFloat(e.target.value);
+        const mm = v * U().toMm;
+        if (!isFinite(v) || v <= 0){
+          $("err").textContent = `${DIM_NAMES[k]} must be a number greater than 0.`;
+          return;
+        }
+        if (mm > MAX_MM){
+          $("err").textContent = `${DIM_NAMES[k]} is too large (max ${fmtNum(MAX_MM)} ${U().unit}).`;
+          return;
+        }
+        $("err").textContent = "";
+        state.dims[k] = mm;
+        renderAll();
+      });
+    }
+  }
+
+  // ---------- Rendering ----------
+  function renderPreview(){
+    const g = geom(), pad = 8;
+    $("net").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${g.netW + 2*pad} ${g.netH + 2*pad}">${netSVG("pv")}</svg>`;
+  }
+
+  function renderInfo(){
+    const P = plan();
+    const pages = P.cols * P.rows;
+    $("info").textContent =
+      `Box net ${fmtNum(P.g.netW)} × ${fmtNum(P.g.netH)} ${U().unit} · ` +
+      `${pages} ${PAPERS[state.paper].name} page${pages > 1 ? "s" : ""} (${P.cols} across × ${P.rows} down)`;
+  }
+
+  function renderAll(){
+    renderPreview();
+    renderSlots();
+    renderInfo();
+  }
+
+  // ---------- Printing ----------
+  function printNet(){
+    const P = plan();
+    const total = P.cols * P.rows;
+    let n = 0, html = "";
+    for (let r = 0; r < P.rows; r++){
+      for (let c = 0; c < P.cols; c++){
+        n++;
+        html += `<div class="pg" style="width:${P.ps.w}mm;height:${P.ps.h}mm">${pageSVG(P, r, c, n, total)}</div>`;
+      }
+    }
+    let st = $("pagecss");
+    if (!st){ st = document.createElement("style"); st.id = "pagecss"; document.head.appendChild(st); }
+    st.textContent = `@page{size:${P.ps.w}mm ${P.ps.h}mm;margin:0}`;
+    $("print-area").innerHTML = html;
+    setTimeout(() => window.print(), 300);
+  }
+
+  // ---------- Save as PDF (direct download, exact page size) ----------
+  const PDF_DPI = 300;
+
+  function svgToPngDataURL(svgText, wMm, hMm){
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([svgText], {type: "image/svg+xml"});
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(wMm / 25.4 * PDF_DPI);
+        canvas.height = Math.round(hMm / 25.4 * PDF_DPI);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.95));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not render a page")); };
+      img.src = url;
+    });
+  }
+
+  async function savePDF(){
+    const btn = $("pdf"), msg = $("pdfmsg");
+    const jspdfLib = window.jspdf;
+    if (!jspdfLib || !jspdfLib.jsPDF){
+      msg.textContent = "The PDF library could not load (check your internet connection), or use Print instead.";
+      return;
+    }
+    const P = plan();
+    const total = P.cols * P.rows;
+    const orientation = P.ps.w > P.ps.h ? "landscape" : "portrait";
+    const pdf = new jspdfLib.jsPDF({unit: "mm", format: [P.ps.w, P.ps.h], orientation, compress: true});
+    btn.disabled = true;
+    try {
+      let n = 0;
+      for (let r = 0; r < P.rows; r++){
+        for (let c = 0; c < P.cols; c++){
+          n++;
+          msg.textContent = `Creating PDF… page ${n} of ${total}`;
+          const svg = pageSVG(P, r, c, n, total);
+          const png = await svgToPngDataURL(svg, P.ps.w, P.ps.h);
+          if (n > 1) pdf.addPage([P.ps.w, P.ps.h], orientation);
+          pdf.addImage(png, "JPEG", 0, 0, P.ps.w, P.ps.h, undefined, "FAST");
+        }
+      }
+      pdf.save(`funko-box-net-${state.unit}.pdf`);
+      msg.textContent = `Saved ${total} page${total > 1 ? "s" : ""} at actual size. Print at 100% scale.`;
+    } catch (err) {
+      msg.textContent = "Could not create the PDF: " + err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- Init ----------
+  function init(){
+    buildSlots();
+    bindDimInputs();
+    $("unit").value = state.unit;
+    $("paper").value = state.paper;
+    $("orient").value = state.orient;
+    syncDimInputs();
+
+    $("unit").addEventListener("change", e => {
+      state.unit = e.target.value;
+      state.paper = U().paper;
+      $("paper").value = state.paper;
+      $("err").textContent = "";
+      syncDimInputs();
+      renderAll();
+    });
+    $("paper").addEventListener("change", e => { state.paper = e.target.value; renderAll(); });
+    $("orient").addEventListener("change", e => { state.orient = e.target.value; renderAll(); });
+    $("print").addEventListener("click", printNet);
+    $("pdf").addEventListener("click", savePDF);
+
+    renderAll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
