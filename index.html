@@ -3,16 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#171719">
 <title>Funko Box Maker</title>
 <style>
   :root{
-    --bg:#f3efe6; --card:#ffffff; --ink:#1f1d1a; --muted:#6e6a62; --line:#dcd5c6;
-    --accent:#6d3fd1; --warn:#b3261e; --fold:#d6336c;
+    color-scheme:dark;
+    --bg:#171719; --card:#222225; --ink:#f2f0f6; --muted:#aaa6b2; --line:#424047;
+    --accent:#9a78f0; --warn:#ff827a; --fold:#ff6b9b;
+    --control:#2b2a30; --slot:#26252a; --thumb:#343239;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
   header{padding:18px 24px;border-bottom:1px solid var(--line);background:var(--card)}
   header h1{margin:0;font-size:20px}
+  header h1 span{font-size:12px;color:var(--accent);font-weight:600}
   header p{margin:4px 0 0;color:var(--muted)}
   main{display:grid;grid-template-columns:minmax(300px,390px) 1fr;gap:20px;padding:20px 24px;max-width:1400px;margin:0 auto}
   @media (max-width:880px){main{grid-template-columns:1fr;padding:16px}}
@@ -20,7 +24,7 @@
   .card + .card{margin-top:16px}
   .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px}
   label{display:block;font-weight:600;margin-bottom:4px}
-  select,input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+  select,input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--control);color:var(--ink)}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .field{margin-bottom:12px}
@@ -28,18 +32,19 @@
   .err{color:var(--warn);font-size:13px;margin-top:8px;min-height:1.2em}
   .slots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media (max-width:520px){.slots{grid-template-columns:1fr}}
-  .slot{border:1px dashed #cbc3b0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:#fcfbf8}
-  .slot.over{border-color:var(--accent);background:#f3edff}
+  .slot{border:1px dashed #514e59;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--slot)}
+  .slot.over{border-color:var(--accent);background:#302744}
   .slot-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600}
   .slot-head .dl{font-weight:400;color:var(--muted);font-size:11px;white-space:nowrap}
-  .thumb{aspect-ratio:4/3;border-radius:6px;background:#ece8de;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12px}
+  .thumb{aspect-ratio:4/3;border-radius:6px;background:var(--thumb);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12px}
   .thumb img{width:100%;height:100%;object-fit:contain}
   .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  button{font:inherit;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
-  button:hover:not(:disabled){border-color:#aaa}
+  button{font:inherit;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--control);color:var(--ink);cursor:pointer}
+  button:hover:not(:disabled){border-color:#8b8793;background:#37353d}
   button:disabled{opacity:.45;cursor:default}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;width:100%;padding:12px;font-size:15px}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#17131f;font-weight:600;width:100%;padding:12px;font-size:15px}
   button.primary:hover{filter:brightness(1.08)}
+  button.fit-page{width:100%;margin-top:10px;border-color:var(--accent);color:var(--ink)}
   .slot select{padding:6px 8px;font-size:13px;flex:1 1 100%;width:100%}
   .preview-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline;margin-bottom:10px}
   .preview-top h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0}
@@ -57,13 +62,13 @@
     #print-area .pg{overflow:hidden;break-after:page;page-break-after:always}
     #print-area .pg:last-child{break-after:auto;page-break-after:auto}
     #print-area svg{display:block;width:100%;height:100%}
-    html,body{background:#fff}
+    html,body{background:#fff;color:#000}
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>Funko Box Maker <span style="font-size:12px;color:#6d3fd1;font-weight:600">v2 · bottom panel + tuck flaps</span></h1>
+  <h1>Funko Box Maker <span>v2 · bottom panel + tuck flaps</span></h1>
   <p>Enter the box size, add the five pictures, then print the net at actual size.</p>
 </header>
 
@@ -86,8 +91,8 @@
             <option value="letter">Letter (8.5 × 11 in)</option>
             <option value="a4">A4 (210 × 297 mm)</option>
             <option value="a3">A3 (297 × 420 mm)</option>
-              <option value="a2">A2 (420 × 594 mm)</option>
-              <option value="a1">A1 (594 × 841 mm)</option>
+            <option value="a2">A2 (420 × 594 mm)</option>
+            <option value="a1">A1 (594 × 841 mm)</option>
             <option value="tabloid">Tabloid (11 × 17 in)</option>
           </select>
         </div>
@@ -119,13 +124,15 @@
         </div>
       </div>
       <div class="hint">Width = front to back edge, Depth = side to side, Height = bottom to top. Use the outside size of the finished box.</div>
+      <button class="fit-page" id="fit-page" type="button">Fit box to one page (keep proportions)</button>
+      <div class="hint">Resizes height, depth and width proportionally to fit the selected paper and orientation.</div>
       <div class="err" id="err"></div>
     </div>
 
     <div class="card">
       <h2>3. Pictures</h2>
       <div class="slots" id="slots"></div>
-      <div class="hint">Each picture is auto-fitted to its panel. <b>Fit panel (whole picture)</b> shows the entire image inside the panel (default). <b>Fill panel (crop edges)</b> covers the whole panel and crops the overflow. <b>Stretch to panel</b> fills the panel edge to edge with no crop, but changes the picture's proportions. Use Rotate if a picture is sideways.</div>
+      <div class="hint">Each picture is auto-fitted to its panel. <b>Fit panel (whole picture)</b> shows the entire image inside the panel (default). <b>Fill panel (crop edges)</b> covers the whole panel by cropping image edges.</div>
     </div>
   </section>
 
@@ -327,6 +334,23 @@
     const cols = g.netW <= pw ? 1 : Math.ceil((g.netW - pw) / sx) + 1;
     const rows = g.netH <= ph ? 1 : Math.ceil((g.netH - ph) / sy) + 1;
     return {g, ps, pw, ph, sx, sy, cols, rows};
+  }
+
+  function fitToOnePage(){
+    const {h, d, w} = state.dims;
+    const ps = paperSize();
+    const availableW = ps.w - 2*MARGIN;
+    const availableH = ps.h - 2*MARGIN;
+    // Tuck flaps and glue tab are fixed-size; scale the three box dimensions together.
+    const scaleW = (availableW - GLUE) / (2*d + 2*w);
+    const scaleH = (availableH - 2*TUCK) / (h + 2*d);
+    const scaleMax = MAX_MM / Math.max(h, d, w);
+    const scale = Math.min(scaleW, scaleH, scaleMax);
+    if (!Number.isFinite(scale) || scale <= 0) return;
+    state.dims = {h: h*scale, d: d*scale, w: w*scale};
+    $("err").textContent = "";
+    syncDimInputs();
+    renderAll();
   }
 
   function pageSVG(P, r, c, n, total){
@@ -581,6 +605,7 @@
     });
     $("paper").addEventListener("change", e => { state.paper = e.target.value; renderAll(); });
     $("orient").addEventListener("change", e => { state.orient = e.target.value; renderAll(); });
+    $("fit-page").addEventListener("click", fitToOnePage);
     $("print").addEventListener("click", printNet);
     $("pdf").addEventListener("click", savePDF);
 
